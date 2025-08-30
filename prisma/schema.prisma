@@ -1,0 +1,183 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  identifier    String   @unique // CRECI for admin, email for regular user
+  password      String
+  role          UserRole @default(USER)
+  name          String?
+  email         String?  @unique
+  creci         String?  @unique
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  managedLots   Lot[]
+  
+  @@map("users")
+}
+
+model Client {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String?
+  document      String   // CPF/CNPJ
+  address       String?
+  city          String?
+  state         String?
+  country       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  portfolios    Portfolio[]
+  transactions  Transaction[]
+  
+  @@map("clients")
+}
+
+model Asset {
+  id            String   @id @default(cuid())
+  symbol        String   @unique
+  name          String
+  type          AssetType
+  category      String?
+  price         Float    // Current market price
+  currency      String   @default("BRL")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  lots          Lot[]
+  transactions  Transaction[]
+  portfolioItems PortfolioItem[]
+  
+  @@map("assets")
+}
+
+model Lot {
+  id            String   @id @default(cuid())
+  assetId       String?
+  empreendimento String   // ID ou nome do empreendimento
+  quadra        String   // Identificador da quadra
+  lote          String   // Identificador do lote
+  area          Float    // Área do lote em m²
+  valor         Float    // Valor do lote
+  entrada       Float    // Valor de entrada
+  status        String   @default("DISPONÍVEL") // DISPONÍVEL, RESERVADO, EM PROPOSTA, VENDIDO
+  observacoes   String?
+  reservedAt    DateTime?
+  reservedBy    String?
+  managedBy     String?  // Reference to User who manages this lot
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  asset         Asset?   @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  manager       User?    @relation(fields: [managedBy], references: [id], onDelete: SetNull)
+  transactions  Transaction[]
+  
+  @@map("lots")
+}
+
+model Transaction {
+  id            String        @id @default(cuid())
+  clientId      String
+  assetId       String?
+  lotId         String?
+  type          TransactionType
+  quantity      Int
+  price         Float
+  totalValue    Float
+  commission    Float         @default(0)
+  taxes         Float         @default(0)
+  date          DateTime
+  status        TransactionStatus @default(COMPLETED)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  asset         Asset?        @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  lot           Lot?          @relation(fields: [lotId], references: [id], onDelete: SetNull)
+  
+  @@map("transactions")
+}
+
+model Portfolio {
+  id            String   @id @default(cuid())
+  clientId      String
+  name          String
+  description   String?
+  totalValue    Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  items         PortfolioItem[]
+  
+  @@map("portfolios")
+}
+
+model PortfolioItem {
+  id            String   @id @default(cuid())
+  portfolioId   String
+  assetId       String
+  quantity      Int
+  averagePrice  Float
+  currentValue  Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  asset         Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  
+  @@unique([portfolioId, assetId])
+  @@map("portfolio_items")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum AssetType {
+  STOCK
+  BOND
+  ETF
+  REIT
+  CRYPTO
+  CURRENCY
+  COMMODITY
+  DERIVATIVE
+  REAL_ESTATE
+  OTHER
+}
+
+enum TransactionType {
+  BUY
+  SELL
+  TRANSFER_IN
+  TRANSFER_OUT
+  RESERVE
+  CANCEL_RESERVE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
