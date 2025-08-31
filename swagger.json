@@ -1,0 +1,1550 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Projeto Vale - Sistema de Gestão Imobiliária",
+    "description": "API completa para o sistema de gestão de lotes imobiliários Projeto Vale. Inclui gerenciamento de lotes, clientes, transações, autenticação e relatórios.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Projeto Vale",
+      "email": "contato@projeto-vale.com.br",
+      "url": "https://projeto-vale.com.br"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Servidor de desenvolvimento"
+    },
+    {
+      "url": "https://api.projeto-vale.com.br",
+      "description": "Servidor de produção"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido através do endpoint /auth/login"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "cuid",
+            "description": "ID único do usuário"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "CRECI para administradores ou email para usuários comuns"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome completo do usuário"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email do usuário (opcional para administradores)"
+          },
+          "creci": {
+            "type": "string",
+            "description": "Número do CRECI (opcional para usuários comuns)"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["ADMIN", "USER"],
+            "description": "Função do usuário no sistema"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Indica se o usuário está ativo"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data de criação do usuário"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data da última atualização"
+          }
+        },
+        "required": ["id", "identifier", "role"]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "CRECI para administradores ou email para usuários comuns"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "Senha do usuário"
+          }
+        },
+        "required": ["identifier", "password"]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensagem de sucesso"
+          }
+        },
+        "required": ["user", "message"]
+      },
+      "Lot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "cuid",
+            "description": "ID único do lote"
+          },
+          "empreendimento": {
+            "type": "string",
+            "description": "ID ou nome do empreendimento"
+          },
+          "quadra": {
+            "type": "string",
+            "description": "Identificador da quadra"
+          },
+          "lote": {
+            "type": "string",
+            "description": "Identificador do lote"
+          },
+          "area": {
+            "type": "number",
+            "format": "float",
+            "description": "Área do lote em metros quadrados"
+          },
+          "valor": {
+            "type": "number",
+            "format": "float",
+            "description": "Valor total do lote"
+          },
+          "entrada": {
+            "type": "number",
+            "format": "float",
+            "description": "Valor de entrada mínimo"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["DISPONÍVEL", "RESERVADO", "EM PROPOSTA", "VENDIDO"],
+            "description": "Status atual do lote"
+          },
+          "observacoes": {
+            "type": "string",
+            "description": "Observações sobre o lote"
+          },
+          "reservedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data da reserva (se aplicável)"
+          },
+          "reservedBy": {
+            "type": "string",
+            "description": "ID do usuário que reservou o lote"
+          },
+          "managedBy": {
+            "type": "string",
+            "description": "ID do administrador que gerencia o lote"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data de criação do lote"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data da última atualização"
+          }
+        },
+        "required": ["empreendimento", "quadra", "lote", "area", "valor", "entrada", "status"]
+      },
+      "CreateLotRequest": {
+        "type": "object",
+        "properties": {
+          "empreendimento": {
+            "type": "string",
+            "description": "ID ou nome do empreendimento"
+          },
+          "quadra": {
+            "type": "string",
+            "description": "Identificador da quadra"
+          },
+          "lote": {
+            "type": "string",
+            "description": "Identificador do lote"
+          },
+          "area": {
+            "type": "number",
+            "format": "float",
+            "description": "Área do lote em metros quadrados"
+          },
+          "valor": {
+            "type": "number",
+            "format": "float",
+            "description": "Valor total do lote"
+          },
+          "entrada": {
+            "type": "number",
+            "format": "float",
+            "description": "Valor de entrada mínimo"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["DISPONÍVEL", "RESERVADO", "EM PROPOSTA", "VENDIDO"],
+            "default": "DISPONÍVEL",
+            "description": "Status inicial do lote"
+          },
+          "observacoes": {
+            "type": "string",
+            "description": "Observações sobre o lote"
+          }
+        },
+        "required": ["empreendimento", "quadra", "lote", "area", "valor", "entrada", "status"]
+      },
+      "UpdateLotRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID do lote a ser atualizado"
+          },
+          "empreendimento": {
+            "type": "string",
+            "description": "ID ou nome do empreendimento"
+          },
+          "quadra": {
+            "type": "string",
+            "description": "Identificador da quadra"
+          },
+          "lote": {
+            "type": "string",
+            "description": "Identificador do lote"
+          },
+          "area": {
+            "type": "number",
+            "format": "float",
+            "description": "Área do lote em metros quadrados"
+          },
+          "valor": {
+            "type": "number",
+            "format": "float",
+            "description": "Valor total do lote"
+          },
+          "entrada": {
+            "type": "number",
+            "format": "float",
+            "description": "Valor de entrada mínimo"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["DISPONÍVEL", "RESERVADO", "EM PROPOSTA", "VENDIDO"],
+            "description": "Novo status do lote"
+          },
+          "observacoes": {
+            "type": "string",
+            "description": "Observações sobre o lote"
+          },
+          "reservedBy": {
+            "type": "string",
+            "description": "ID do usuário que reservou o lote"
+          }
+        },
+        "required": ["id"]
+      },
+      "LotsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Lot"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "Total de lotes retornados"
+              },
+              "filters": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "description": "Filtro de status aplicado"
+                  },
+                  "empreendimento": {
+                    "type": "string",
+                    "description": "Filtro de empreendimento aplicado"
+                  },
+                  "quadra": {
+                    "type": "string",
+                    "description": "Filtro de quadra aplicado"
+                  },
+                  "lote": {
+                    "type": "string",
+                    "description": "Filtro de lote aplicado"
+                  }
+                }
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp da consulta"
+              }
+            }
+          }
+        },
+        "required": ["data", "metadata"]
+      },
+      "Client": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "cuid",
+            "description": "ID único do cliente"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome completo do cliente"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email do cliente"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Telefone do cliente"
+          },
+          "document": {
+            "type": "string",
+            "description": "CPF ou CNPJ do cliente"
+          },
+          "address": {
+            "type": "string",
+            "description": "Endereço do cliente"
+          },
+          "city": {
+            "type": "string",
+            "description": "Cidade do cliente"
+          },
+          "state": {
+            "type": "string",
+            "description": "Estado do cliente"
+          },
+          "country": {
+            "type": "string",
+            "default": "Brasil",
+            "description": "País do cliente"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data de criação do cliente"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data da última atualização"
+          }
+        },
+        "required": ["name", "email", "document"]
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "cuid",
+            "description": "ID único da transação"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "ID do cliente"
+          },
+          "assetId": {
+            "type": "string",
+            "description": "ID do ativo (opcional)"
+          },
+          "lotId": {
+            "type": "string",
+            "description": "ID do lote (opcional)"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["BUY", "SELL", "TRANSFER_IN", "TRANSFER_OUT", "RESERVE", "CANCEL_RESERVE"],
+            "description": "Tipo da transação"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Quantidade de unidades"
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "description": "Preço unitário"
+          },
+          "totalValue": {
+            "type": "number",
+            "format": "float",
+            "description": "Valor total da transação"
+          },
+          "commission": {
+            "type": "number",
+            "format": "float",
+            "default": 0,
+            "description": "Valor da comissão"
+          },
+          "taxes": {
+            "type": "number",
+            "format": "float",
+            "default": 0,
+            "description": "Valor dos impostos"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Data da transação"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "COMPLETED", "CANCELLED", "FAILED"],
+            "default": "COMPLETED",
+            "description": "Status da transação"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Observações sobre a transação"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data de criação da transação"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data da última atualização"
+          }
+        },
+        "required": ["clientId", "type", "quantity", "price", "totalValue", "date"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Mensagem de erro"
+          },
+          "code": {
+            "type": "integer",
+            "description": "Código do erro HTTP"
+          },
+          "details": {
+            "type": "object",
+            "description": "Detalhes adicionais do erro"
+          }
+        },
+        "required": ["error"]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Mensagem de status da API"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp da verificação"
+          },
+          "version": {
+            "type": "string",
+            "description": "Versão da API"
+          },
+          "database": {
+            "type": "string",
+            "description": "Status da conexão com o banco de dados"
+          }
+        },
+        "required": ["message"]
+      }
+    }
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Autenticação"],
+        "summary": "Autenticar usuário",
+        "description": "Realiza a autenticação de um usuário no sistema usando CRECI (para administradores) ou email (para usuários comuns)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login realizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Sistema"],
+        "summary": "Verificar saúde da API",
+        "description": "Endpoint para verificar se a API está funcionando corretamente",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "API funcionando normalmente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lots": {
+      "get": {
+        "tags": ["Lotes"],
+        "summary": "Listar lotes",
+        "description": "Retorna uma lista de lotes com suporte a filtros",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filtrar por status do lote",
+            "schema": {
+              "type": "string",
+              "enum": ["DISPONÍVEL", "RESERVADO", "EM PROPOSTA", "VENDIDO"]
+            }
+          },
+          {
+            "name": "empreendimento",
+            "in": "query",
+            "description": "Filtrar por empreendimento",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "quadra",
+            "in": "query",
+            "description": "Filtrar por quadra",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lote",
+            "in": "query",
+            "description": "Filtrar por número do lote",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página (paginação)",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limite de resultados por página",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 1000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de lotes retornada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LotsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Lotes"],
+        "summary": "Criar novo lote",
+        "description": "Cria um novo lote no sistema",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLotRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lote criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Lot"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Mensagem de sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lote já existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Lotes"],
+        "summary": "Atualizar lote existente",
+        "description": "Atualiza os dados de um lote existente",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLotRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lote atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Lot"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Mensagem de sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lote não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Lotes"],
+        "summary": "Excluir lote",
+        "description": "Exclui um lote do sistema",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "description": "ID do lote a ser excluído",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lote excluído com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Mensagem de sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ID não fornecido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lote não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lots/{id}": {
+      "get": {
+        "tags": ["Lotes"],
+        "summary": "Obter lote por ID",
+        "description": "Retorna os detalhes de um lote específico",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do lote",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lote encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lote não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients": {
+      "get": {
+        "tags": ["Clientes"],
+        "summary": "Listar clientes",
+        "description": "Retorna uma lista de clientes",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Buscar por nome ou email",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limite de resultados",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de clientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Client"
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Clientes"],
+        "summary": "Criar novo cliente",
+        "description": "Cria um novo cliente no sistema",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Client"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Client"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/clients/{id}": {
+      "get": {
+        "tags": ["Clientes"],
+        "summary": "Obter cliente por ID",
+        "description": "Retorna os detalhes de um cliente específico",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Client"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Clientes"],
+        "summary": "Atualizar cliente",
+        "description": "Atualiza os dados de um cliente existente",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Client"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cliente atualizado com sucesso"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Clientes"],
+        "summary": "Excluir cliente",
+        "description": "Exclui um cliente do sistema",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente excluído com sucesso"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/transactions": {
+      "get": {
+        "tags": ["Transações"],
+        "summary": "Listar transações",
+        "description": "Retorna uma lista de transações",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "query",
+            "description": "Filtrar por ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lotId",
+            "in": "query",
+            "description": "Filtrar por ID do lote",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filtrar por tipo de transação",
+            "schema": {
+              "type": "string",
+              "enum": ["BUY", "SELL", "TRANSFER_IN", "TRANSFER_OUT", "RESERVE", "CANCEL_RESERVE"]
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Data inicial (YYYY-MM-DD)",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Data final (YYYY-MM-DD)",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limite de resultados",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de transações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Transaction"
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Transações"],
+        "summary": "Criar nova transação",
+        "description": "Cria uma nova transação no sistema",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Transaction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transação criada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Transaction"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/transactions/{id}": {
+      "get": {
+        "tags": ["Transações"],
+        "summary": "Obter transação por ID",
+        "description": "Retorna os detalhes de uma transação específica",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID da transação",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transação encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Transaction"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transação não encontrada"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/reports/dashboard": {
+      "get": {
+        "tags": ["Relatórios"],
+        "summary": "Dados do dashboard",
+        "description": "Retorna dados consolidados para o dashboard principal",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "totalLots": {
+                          "type": "integer",
+                          "description": "Total de lotes"
+                        },
+                        "availableLots": {
+                          "type": "integer",
+                          "description": "Lotes disponíveis"
+                        },
+                        "reservedLots": {
+                          "type": "integer",
+                          "description": "Lotes reservados"
+                        },
+                        "soldLots": {
+                          "type": "integer",
+                          "description": "Lotes vendidos"
+                        },
+                        "totalValue": {
+                          "type": "number",
+                          "description": "Valor total dos lotes"
+                        }
+                      }
+                    },
+                    "charts": {
+                      "type": "object",
+                      "properties": {
+                        "lotDistribution": {
+                          "type": "array",
+                          "description": "Distribuição de lotes por status"
+                        },
+                        "reservationsByMonth": {
+                          "type": "array",
+                          "description": "Reservas por mês"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/reports/financial": {
+      "get": {
+        "tags": ["Relatórios"],
+        "summary": "Relatório financeiro",
+        "description": "Retorna dados financeiros consolidados",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Data inicial (YYYY-MM-DD)",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Data final (YYYY-MM-DD)",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados financeiros",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalRevenue": {
+                      "type": "number",
+                      "description": "Receita total"
+                    },
+                    "totalCommission": {
+                      "type": "number",
+                      "description": "Comissão total"
+                    },
+                    "transactions": {
+                      "type": "integer",
+                      "description": "Número de transações"
+                    },
+                    "byMonth": {
+                      "type": "array",
+                      "description": "Dados mensais"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Autenticação",
+      "description": "Endpoints para autenticação de usuários"
+    },
+    {
+      "name": "Lotes",
+      "description": "Gerenciamento de lotes imobiliários"
+    },
+    {
+      "name": "Clientes",
+      "description": "Gerenciamento de clientes"
+    },
+    {
+      "name": "Transações",
+      "description": "Gerenciamento de transações financeiras"
+    },
+    {
+      "name": "Relatórios",
+      "description": "Relatórios e análises"
+    },
+    {
+      "name": "Sistema",
+      "description": "Endpoints do sistema"
+    }
+  ]
+}
